@@ -1,0 +1,77 @@
+' Realistic windows evaporation script
+
+'2020-2021 Anonim17PL (A17PL)
+
+'Script Version: 1.0
+'Omsi release: 2.3.004
+
+'Needs:
+'- cockpit
+'- heizung
+'- Optional: Change the heating script to take into account high humidity when operating in closed air circulation.
+
+' Variables to use:
+'- 'wynik' - Windows and panes not heated
+'- 'wynik_Frontfenster' - Windows and panes heated by a stream of air.
+'- 'wynik_driverfenster' - Electrically heated windows and panes
+
+
+{trigger:driverfenster_heater}
+
+{end}
+
+{macro:para_init}
+	(L.S.Weather_Temperature) (S.L.Frontfenster_temp)
+	(L.S.Weather_Temperature) (S.L.driverfenster_temp) (S.L.fenster_temp)
+{end}
+
+
+{macro:para_frame}
+	(L.L.ELECTRIC_HEATING_BUTTON_VARIABLE) (S.L.driverfenster_heater_sw)
+
+
+	0 (L.L.fenster_temp) (L.L.Cabinair_Temp) - 0.2 * - 120 / (L.S.Timegap) * (L.L.fenster_temp) + (S.L.fenster_temp)
+
+	(L.L.Cabinair_absHum) (L.L.fenster_temp) (F.L.para_curve) / s5
+
+	l5 sqrt sqrt sqrt s0
+	(L.L.Cabinair_Temp) 0.9 * 112 + s1
+	(L.L.Cabinair_Temp) 0.1 * s2
+	l0 l1 * l2 + 112 - (S.L.rosa)
+	(L.L.rosa) (L.S.Weather_Temperature) - 0 max 3 / 1 min (S.L.wynik)
+	
+	(L.L.driverfenster_heater_sw) (L.L.elec_busbar_main) *
+	{if}
+		30 (L.L.Cabinair_Temp) + (L.L.driverfenster_temp) - 0.4 * (S.L.driverfenster_Qrate_driverfenster) 
+	{else}
+		0 (S.L.driverfenster_Qrate_driverfenster) 
+	{endif}
+	(L.L.driverfenster_temp) (L.L.Cabinair_Temp) - 0.2 * (S.L.driverfenster_Qrate_cooling)
+	(L.L.driverfenster_Qrate_driverfenster) (L.L.driverfenster_Qrate_cooling) - 120 / (L.S.Timegap) * (L.L.driverfenster_temp) + (S.L.driverfenster_temp)
+
+' EXAMPLE: (L.L.fanheater_t_target) (L.L.cp_klimator_RPM) 100 / * (L.L.cockpit_heizregler_defrost) * (L.L.Cabinair_Temp) + s1
+' For more information, see the heating script.
+
+	(L.L.AIR_OUTLET_TEMPERATURE) (L.L.HEATER_POWER) * (L.L.STATUS_OF_WINDSCREEN_AIR_BLOW_KNOB) * (L.L.Cabinair_Temp) + s1
+
+	l1 (L.L.Frontfenster_temp) - 0.1 * (S.L.Frontfenster_Qrate_Frontfenster) 
+	(L.L.Frontfenster_temp) (L.L.Cabinair_Temp) - 0.1 * (S.L.Frontfenster_Qrate_cooling)
+	(L.L.Frontfenster_Qrate_Frontfenster) (L.L.Frontfenster_Qrate_cooling) - 120 / (L.S.Timegap) * (L.L.Frontfenster_temp) + (S.L.Frontfenster_temp)
+	
+	(L.L.Cabinair_absHum) (L.L.driverfenster_temp) (F.L.para_curve) / s5
+	
+	l5 sqrt sqrt sqrt s0
+	(L.L.Cabinair_Temp) 0.9 * 112 + s1
+	(L.L.Cabinair_Temp) 0.1 * s2
+	l0 l1 * l2 + 112 - s8
+	l8 (L.S.Weather_Temperature) - 0 max 3 / 1 min (S.L.wynik_driverfenster)
+	
+	(L.L.Cabinair_absHum) (L.L.Frontfenster_temp) (F.L.para_curve) / s5
+	
+	l5 sqrt sqrt sqrt s0
+	(L.L.Cabinair_Temp) 0.9 * 112 + s1
+	(L.L.Cabinair_Temp) 0.1 * s2
+	l0 l1 * l2 + 112 - s8
+	l8 (L.S.Weather_Temperature) - 0 max 3 / 1 min (S.L.wynik_Frontfenster)
+	
+{end}
